@@ -918,3 +918,9 @@ CREATE TABLE event_creator
     create_authority_level INT DEFAULT 0,         -- 0：未知；1：一级权限创建；2：二级权限创建；3：三级权限创建
     create_authority_id    INT DEFAULT 0          -- 创建者若为二级权限或三级权限，则记录其ID，否则为0
 );
+
+
+-- 为request表增加has_read和is_deleted字段
+alter table zbak_event_team_request
+    add has_read bool default false not null,
+    add is_deleted bool default false not null;

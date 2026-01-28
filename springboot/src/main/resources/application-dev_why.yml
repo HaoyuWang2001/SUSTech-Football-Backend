@@ -1,24 +1,12 @@
 server:
   port: 8085
   ssl:
-#    enabled: true
-#    key-store: keystore_football.p12
-#    key-store-type: PKCS12
-#    key-store-password: 111111
-#    key-alias: ssl_football
-
     enabled: true
-    key-store: haoyu-wang141.top.pfx
+    key-store: classpath:haoyu-wang141.top.pfx
     key-store-type: PKCS12
-    key-store-password: 5bm5uflq5p7d
+    key-store-password: c687e6wag2z83
     key-alias: haoyu-wang141.top
 
-#spring:
-#  datasource:
-#    url: jdbc:postgresql://localhost:5432/football
-#    username: postgres
-#    password: 111111
-#
 spring:
   datasource:
     url: jdbc:postgresql://114.132.51.227:5432/football
