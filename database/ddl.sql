@@ -271,9 +271,20 @@ CREATE TABLE event_manager
 -- 赛事-球队
 CREATE TABLE event_team
 (
-    event_id INT REFERENCES event (event_id),
-    team_id  INT REFERENCES team (team_id),
+    event_id INT REFERENCES event (event_id) ON DELETE CASCADE,
+    team_id  INT REFERENCES team (team_id) ON DELETE CASCADE,
     PRIMARY KEY (event_id, team_id)
+);
+
+-- 赛事-球队-大名单（存储每个球队在赛事中的参赛球员）
+CREATE TABLE event_team_roster
+(
+    event_id  INT,
+    team_id   INT,
+    player_id INT REFERENCES player (player_id) ON DELETE CASCADE,
+    number    INT, -- 球衣号码
+    PRIMARY KEY (event_id, team_id, player_id),
+    FOREIGN KEY (event_id, team_id) REFERENCES event_team (event_id, team_id) ON DELETE CASCADE
 );
 
 -- 小组
@@ -557,6 +568,13 @@ CREATE TABLE zbak_event_team
 (
     LIKE event_team INCLUDING ALL
 );
+
+-- 赛事-球队-大名单
+CREATE TABLE zbak_event_team_roster
+(
+    LIKE event_team_roster INCLUDING ALL
+);
+
 -- 小组
 CREATE TABLE zbak_event_group
 (
@@ -753,6 +771,11 @@ BEGIN
     FROM event_team
     WHERE event_id = OLD.event_id;
 
+    INSERT INTO zbak_event_team_roster
+    SELECT *
+    FROM event_team_roster
+    WHERE event_id = OLD.event_id;
+
     INSERT INTO zbak_event_group
     SELECT *
     FROM event_group
@@ -829,6 +852,10 @@ BEGIN
 
     DELETE
     FROM event_group
+    WHERE event_id = OLD.event_id;
+
+    DELETE
+    FROM event_team_roster
     WHERE event_id = OLD.event_id;
 
     DELETE

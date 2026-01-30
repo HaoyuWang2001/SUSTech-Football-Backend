@@ -271,9 +271,20 @@ CREATE TABLE event_manager
 -- 璧涗簨-鐞冮槦
 CREATE TABLE event_team
 (
-    event_id INT REFERENCES event (event_id),
-    team_id  INT REFERENCES team (team_id),
+    event_id INT REFERENCES event (event_id) ON DELETE CASCADE,
+    team_id  INT REFERENCES team (team_id) ON DELETE CASCADE,
     PRIMARY KEY (event_id, team_id)
+);
+
+-- 璧涗簨-鐞冮槦-澶у悕鍗曪紙瀛樺偍姣忎釜鐞冮槦鍦ㄨ禌浜嬩腑鐨勫弬璧涚悆鍛樼悆鍛橈級
+CREATE TABLE event_team_roster
+(
+    event_id  INT,
+    team_id   INT,
+    player_id INT REFERENCES player (player_id) ON DELETE CASCADE,
+    number    INT, -- 鐞冭。鍙风爜
+    PRIMARY KEY (event_id, team_id, player_id),
+    FOREIGN KEY (event_id, team_id) REFERENCES event_team (event_id, team_id) ON DELETE CASCADE
 );
 
 -- 灏忕粍
@@ -557,6 +568,13 @@ CREATE TABLE zbak_event_team
 (
     LIKE event_team INCLUDING ALL
 );
+
+-- 璧涗簨-鐞冮槦-澶у悕鍗?
+CREATE TABLE zbak_event_team_roster
+(
+    LIKE event_team_roster INCLUDING ALL
+);
+
 -- 灏忕粍
 CREATE TABLE zbak_event_group
 (
@@ -753,6 +771,11 @@ BEGIN
     FROM event_team
     WHERE event_id = OLD.event_id;
 
+    INSERT INTO zbak_event_team_roster
+    SELECT *
+    FROM event_team_roster
+    WHERE event_id = OLD.event_id;
+
     INSERT INTO zbak_event_group
     SELECT *
     FROM event_group
@@ -829,6 +852,10 @@ BEGIN
 
     DELETE
     FROM event_group
+    WHERE event_id = OLD.event_id;
+
+    DELETE
+    FROM event_team_roster
     WHERE event_id = OLD.event_id;
 
     DELETE

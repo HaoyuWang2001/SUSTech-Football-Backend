@@ -49,6 +49,10 @@ public class EventController {
     private ThirdLevelAuthorityService thirdLevelAuthorityService;
     @Autowired
     private EventCreatorService eventCreatorService;
+    @Autowired
+    private EventTeamRosterService eventTeamRosterService;
+    @Autowired
+    private PlayerService playerService;
 
     public record Match_GET(
             Long matchId,
@@ -905,7 +909,110 @@ public class EventController {
         if (!eventService.deleteReferee(new EventReferee(eventId, refereeId))) {
             throw new RuntimeException("删除裁判失败");
         }
+    }
 
+    // ==================== 大名单管理 ====================
+
+    @PostMapping("/roster/set")
+    @Operation(summary = "设置球队大名单", description = "球队接受邀请后设置参赛大名单")
+    @Parameters({
+            @Parameter(name = "eventId", description = "赛事 ID", required = true),
+            @Parameter(name = "teamId", description = "球队 ID", required = true)
+    })
+    public void setRoster(Long eventId, Long teamId, @RequestBody List<Long> playerIds) {
+        if (eventId == null || teamId == null) {
+            throw new BadRequestException("赛事ID或球队ID为空");
+        }
+        if (playerIds == null || playerIds.isEmpty()) {
+            throw new BadRequestException("球员列表为空");
+        }
+
+        Event event = eventService.getById(eventId);
+        if (event == null) {
+            throw new ResourceNotFoundException("赛事不存在");
+        }
+        if (teamService.getById(teamId) == null) {
+            throw new ResourceNotFoundException("球队不存在");
+        }
+
+        // 检查球队是否已经确认参赛
+        EventTeam eventTeam = eventTeamService.getOne(
+            new QueryWrapper<EventTeam>().eq("event_id", eventId).eq("team_id", teamId)
+        );
+        if (eventTeam == null) {
+            throw new BadRequestException("球队尚未确认参赛");
+        }
+
+        // 检查人数是否符合要求
+        if (event.getRosterSize() != null && playerIds.size() > event.getRosterSize()) {
+            throw new BadRequestException("大名单人数超过限制（最多" + event.getRosterSize() + "人）");
+        }
+        if (event.getMatchPlayerCount() != null && playerIds.size() < event.getMatchPlayerCount()) {
+            throw new BadRequestException("大名单人数不足（至少" + event.getMatchPlayerCount() + "人）");
+        }
+
+        // 验证所有球员都属于该球队
+        for (Long playerId : playerIds) {
+            Player player = playerService.getById(playerId);
+            if (player == null) {
+                throw new ResourceNotFoundException("球员ID " + playerId + " 不存在");
+            }
+            // 这里可以添加检查球员是否属于该球队的逻辑
+        }
+
+        if (!eventTeamRosterService.setRoster(eventId, teamId, playerIds)) {
+            throw new RuntimeException("设置大名单失败");
+        }
+    }
+
+    @GetMapping("/roster/get")
+    @Operation(summary = "获取球队大名单", description = "获取球队在赛事中的大名单")
+    @Parameters({
+            @Parameter(name = "eventId", description = "赛事 ID", required = true),
+            @Parameter(name = "teamId", description = "球队 ID", required = true)
+    })
+    public List<Player> getRoster(Long eventId, Long teamId) {
+        if (eventId == null || teamId == null) {
+            throw new BadRequestException("赛事ID或球队ID为空");
+        }
+        if (eventService.getById(eventId) == null) {
+            throw new ResourceNotFoundException("赛事不存在");
+        }
+        if (teamService.getById(teamId) == null) {
+            throw new ResourceNotFoundException("球队不存在");
+        }
+
+        return eventTeamRosterService.getRoster(eventId, teamId);
+    }
+
+    @GetMapping("/roster/hasSet")
+    @Operation(summary = "检查是否已设置大名单", description = "检查球队是否已经设置大名单")
+    @Parameters({
+            @Parameter(name = "eventId", description = "赛事 ID", required = true),
+            @Parameter(name = "teamId", description = "球队 ID", required = true)
+    })
+    public boolean hasSetRoster(Long eventId, Long teamId) {
+        if (eventId == null || teamId == null) {
+            throw new BadRequestException("赛事ID或球队ID为空");
+        }
+        return eventTeamRosterService.hasSetRoster(eventId, teamId);
+    }
+
+    @PostMapping("/roster/updateNumber")
+    @Operation(summary = "更新球员号码", description = "更新球员在大名单中的号码")
+    @Parameters({
+            @Parameter(name = "eventId", description = "赛事 ID", required = true),
+            @Parameter(name = "teamId", description = "球队 ID", required = true),
+            @Parameter(name = "playerId", description = "球员 ID", required = true),
+            @Parameter(name = "number", description = "球衣号码", required = true)
+    })
+    public void updatePlayerNumber(Long eventId, Long teamId, Long playerId, Integer number) {
+        if (eventId == null || teamId == null || playerId == null || number == null) {
+            throw new BadRequestException("参数不能为空");
+        }
+        if (!eventTeamRosterService.updatePlayerNumber(eventId, teamId, playerId, number)) {
+            throw new RuntimeException("更新球员号码失败");
+        }
     }
 
 //    private void checkParams(Map<String, Long> params) {

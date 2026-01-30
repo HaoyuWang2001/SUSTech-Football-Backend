@@ -49,6 +49,8 @@ public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements
     private MatchRefereeService matchRefereeService;
     @Autowired
     private EventCreatorService eventCreatorService;
+    @Autowired
+    private EventTeamRosterService eventTeamRosterService;
 
     @Override
     @Transactional
@@ -86,10 +88,17 @@ public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements
     @Override
     @Transactional
     public boolean deleteEvent(Long eventId) {
-        QueryWrapper<EventCreator> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("event_id", eventId);
-        eventCreatorService.remove(queryWrapper);
+        // 1. 删除赛事创建者记录
+        QueryWrapper<EventCreator> creatorQueryWrapper = new QueryWrapper<>();
+        creatorQueryWrapper.eq("event_id", eventId);
+        eventCreatorService.remove(creatorQueryWrapper);
 
+        // 2. 删除赛事球队大名单记录（必须在删除 event_team 之前删除）
+        QueryWrapper<EventTeamRoster> rosterQueryWrapper = new QueryWrapper<>();
+        rosterQueryWrapper.eq("event_id", eventId);
+        eventTeamRosterService.remove(rosterQueryWrapper);
+
+        // 3. 删除赛事本身（级联删除其他相关表）
         if (!removeById(eventId)) {
             throw new RuntimeException("删除赛事失败");
         }
