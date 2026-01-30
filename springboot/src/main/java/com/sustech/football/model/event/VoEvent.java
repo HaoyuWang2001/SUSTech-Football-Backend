@@ -13,6 +13,8 @@ public class VoEvent {
     Long eventId;
     String name;
     String description;
+    Integer matchPlayerCount;
+    Integer rosterSize;
     List<VoManager> managerList;
     List<VoTeamInfo> teamList;
     List<VoGroup> groupList;

@@ -111,6 +111,12 @@ public class Event {
     @Schema(description = "赛事简介", example = "2024 年书院杯是一项由南科大举办的校内足球赛事")
     private String description;
 
+    @Schema(description = "比赛人数（几人制）", example = "11")
+    private Integer matchPlayerCount;
+
+    @Schema(description = "大名单人数（每支参赛球队可报名的球员总数）", example = "23")
+    private Integer rosterSize;
+
     @TableField(exist = false)
     @Schema(description = "赛事管理员 ID 列表")
     private List<Long> managerIdList;
