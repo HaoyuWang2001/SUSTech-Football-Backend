@@ -131,6 +131,7 @@ public class EventController {
         voEvent.setDescription(event.getDescription());
         voEvent.setMatchPlayerCount(event.getMatchPlayerCount());
         voEvent.setRosterSize(event.getRosterSize());
+        voEvent.setRosterDeadline(event.getRosterDeadline());
         voEvent.setManagerList(event.getManagerIdList()
                 .stream()
                 .map(userId -> {
