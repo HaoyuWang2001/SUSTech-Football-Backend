@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -13,6 +14,9 @@ public class VoEvent {
     Long eventId;
     String name;
     String description;
+    Integer matchPlayerCount;
+    Integer rosterSize;
+    LocalDateTime rosterDeadline;
     List<VoManager> managerList;
     List<VoTeamInfo> teamList;
     List<VoGroup> groupList;

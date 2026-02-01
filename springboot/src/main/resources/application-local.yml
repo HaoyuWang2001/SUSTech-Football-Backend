@@ -1,0 +1,24 @@
+server:
+  port: 8085
+  ssl:
+    enabled: false
+
+#spring:
+#  datasource:
+#    url: jdbc:postgresql://114.132.51.227:5432/football
+#    username: admin_football
+#    password: 111111
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/football
+    username: football_user
+    password: 123456
+
+file:
+  upload-dir: D:\SUSTech-Football-Upload\
+
+logging:
+  charset:
+    console: UTF-8
+    file: UTF-8

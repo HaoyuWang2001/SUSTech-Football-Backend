@@ -1,4 +1,4 @@
--- last_updated函数
+﻿-- last_updated鍑芥暟
 CREATE
     OR REPLACE FUNCTION update_last_updated_column()
     RETURNS TRIGGER AS
@@ -12,7 +12,7 @@ $$
     language 'plpgsql';
 
 
--- 用户表
+-- 鐢ㄦ埛琛?
 CREATE TABLE t_user
 (
     user_id     SERIAL PRIMARY KEY,
@@ -22,7 +22,7 @@ CREATE TABLE t_user
     avatar_url  VARCHAR(255)
 );
 
--- 球员表
+-- 鐞冨憳琛?
 CREATE TABLE player
 (
     player_id      SERIAL PRIMARY KEY,
@@ -31,16 +31,16 @@ CREATE TABLE player
     birth_date     DATE,
     height         INT,
     weight         INT,
-    position       VARCHAR(100), -- 后卫、前锋等
-    identity       VARCHAR(100), -- 本科生，研究生，教职工，其他
-    shu_yuan       VARCHAR(100), -- 若本科生则有书院
-    college        VARCHAR(255), -- 若本科生/研究生/教职工则有院系
-    admission_year INT,          -- 入学年份
-    bio            TEXT,         -- 个人简介
+    position       VARCHAR(100), -- 鍚庡崼銆佸墠閿嬬瓑
+    identity       VARCHAR(100), -- 鏈鐢燂紝鐮旂┒鐢燂紝鏁欒亴宸ワ紝鍏朵粬
+    shu_yuan       VARCHAR(100), -- 鑻ユ湰绉戠敓鍒欐湁涔﹂櫌
+    college        VARCHAR(255), -- 鑻ユ湰绉戠敓/鐮旂┒鐢?/鏁欒亴宸ュ垯鏈夐櫌绯?
+    admission_year INT,          -- 鍏ュ骞翠唤
+    bio            TEXT,         -- 涓汉绠?浠?
     user_id        INT UNIQUE REFERENCES t_user
 );
 
--- 教练表
+-- 鏁欑粌琛?
 CREATE TABLE coach
 (
     coach_id  SERIAL PRIMARY KEY,
@@ -50,7 +50,7 @@ CREATE TABLE coach
     user_id   INT REFERENCES t_user
 );
 
--- 裁判表
+-- 瑁佸垽琛?
 CREATE TABLE referee
 (
     referee_id SERIAL PRIMARY KEY,
@@ -60,7 +60,7 @@ CREATE TABLE referee
     user_id    INT REFERENCES t_user
 );
 
--- 球队表
+-- 鐞冮槦琛?
 CREATE TABLE team
 (
     team_id     SERIAL PRIMARY KEY,
@@ -70,7 +70,7 @@ CREATE TABLE team
     description TEXT
 );
 
--- 球队-队服
+-- 鐞冮槦-闃熸湇
 CREATE TABLE team_uniform
 (
     team_id     INT REFERENCES team (team_id),
@@ -78,7 +78,7 @@ CREATE TABLE team_uniform
     PRIMARY KEY (team_id, uniform_url)
 );
 
--- 球队管理者表
+-- 鐞冮槦绠＄悊鑰呰〃
 CREATE TABLE team_manager
 (
     user_id  INT REFERENCES t_user,
@@ -87,16 +87,16 @@ CREATE TABLE team_manager
     PRIMARY KEY (user_id, team_id)
 );
 
--- 球队-球员
+-- 鐞冮槦-鐞冨憳
 CREATE TABLE team_player
 (
     team_id   INT REFERENCES team (team_id),
     player_id INT REFERENCES player (player_id),
-    number    INT DEFAULT 0, -- 球衣号码
+    number    INT DEFAULT 0, -- 鐞冭。鍙风爜
     PRIMARY KEY (team_id, player_id)
 );
 
--- 球队邀请球员/球员申请加入球队
+-- 鐞冮槦閭?璇风悆鍛?/鐞冨憳鐢宠鍔犲叆鐞冮槦
 CREATE TABLE team_player_request
 (
     team_id      INT REFERENCES team (team_id),
@@ -107,7 +107,7 @@ CREATE TABLE team_player_request
     PRIMARY KEY (team_id, player_id, type)
 );
 
--- 更新last_updated触发器
+-- 鏇存柊last_updated瑙﹀彂鍣?
 CREATE TRIGGER update_last_updated_trigger
     BEFORE INSERT or
         UPDATE
@@ -115,7 +115,7 @@ CREATE TRIGGER update_last_updated_trigger
     FOR EACH ROW
 EXECUTE FUNCTION update_last_updated_column();
 
--- 球队-教练
+-- 鐞冮槦-鏁欑粌
 CREATE TABLE team_coach
 (
     team_id  INT REFERENCES team (team_id),
@@ -123,7 +123,7 @@ CREATE TABLE team_coach
     PRIMARY KEY (team_id, coach_id)
 );
 
--- 球队邀请教练
+-- 鐞冮槦閭?璇锋暀缁?
 CREATE TABLE team_coach_request
 (
     team_id      INT REFERENCES team (team_id),
@@ -133,7 +133,7 @@ CREATE TABLE team_coach_request
     PRIMARY KEY (team_id, coach_id)
 );
 
--- 更新last_updated触发器
+-- 鏇存柊last_updated瑙﹀彂鍣?
 CREATE TRIGGER update_last_updated_trigger
     BEFORE INSERT or
         UPDATE
@@ -142,7 +142,7 @@ CREATE TRIGGER update_last_updated_trigger
 EXECUTE FUNCTION update_last_updated_column();
 
 
--- 比赛表
+-- 姣旇禌琛?
 CREATE TABLE match
 (
     match_id          SERIAL PRIMARY KEY,
@@ -165,7 +165,7 @@ CREATE TABLE match_manager
     PRIMARY KEY (match_id, user_id)
 );
 
--- 比赛(友谊赛)邀请球队
+-- 姣旇禌(鍙嬭皧璧?)閭?璇风悆闃?
 CREATE TABLE match_team_request
 (
     match_id     INT REFERENCES match,
@@ -176,7 +176,7 @@ CREATE TABLE match_team_request
     PRIMARY KEY (match_id, team_id)
 );
 
--- 更新last_updated触发器
+-- 鏇存柊last_updated瑙﹀彂鍣?
 CREATE TRIGGER update_last_updated_trigger
     BEFORE INSERT or
         UPDATE
@@ -185,7 +185,7 @@ CREATE TRIGGER update_last_updated_trigger
 EXECUTE FUNCTION update_last_updated_column();
 
 
--- 比赛-裁判
+-- 姣旇禌-瑁佸垽
 CREATE TABLE match_referee
 (
     match_id   INT REFERENCES match,
@@ -193,7 +193,7 @@ CREATE TABLE match_referee
     PRIMARY KEY (match_id, referee_id)
 );
 
--- 比赛邀请裁判
+-- 姣旇禌閭?璇疯鍒?
 CREATE TABLE match_referee_request
 (
     match_id     INT REFERENCES match,
@@ -203,7 +203,7 @@ CREATE TABLE match_referee_request
     PRIMARY KEY (match_id, referee_id)
 );
 
--- 更新last_updated触发器
+-- 鏇存柊last_updated瑙﹀彂鍣?
 CREATE TRIGGER update_last_updated_trigger
     BEFORE INSERT or
         UPDATE
@@ -211,7 +211,7 @@ CREATE TRIGGER update_last_updated_trigger
     FOR EACH ROW
 EXECUTE FUNCTION update_last_updated_column();
 
--- 比赛-球员行为（进球、红牌、黄牌）
+-- 姣旇禌-鐞冨憳琛屼负锛堣繘鐞冦?佺孩鐗屻?侀粍鐗岋級
 CREATE TABLE match_player_action
 (
     match_id  INT REFERENCES match,
@@ -219,7 +219,7 @@ CREATE TABLE match_player_action
     player_id INT REFERENCES player,
     action    VARCHAR CHECK ( action IN ('GOAL', 'ASSIST', 'YELLOW_CARD', 'RED_CARD', 'ON', 'OFF')
         ),
-    time      INTEGER, -- 比赛开始的时间
+    time      INTEGER, -- 姣旇禌寮?濮嬬殑鏃堕棿
     PRIMARY KEY (match_id, team_id, player_id, action, time)
 );
 
@@ -249,17 +249,17 @@ CREATE TABLE match_player
     PRIMARY KEY (match_id, team_id, player_id)
 );
 
--- 赛事表
+-- 璧涗簨琛?
 CREATE TABLE event
 (
     event_id           SERIAL PRIMARY KEY,
     name               VARCHAR(255) NOT NULL,
     description        TEXT,
-    match_player_count INT, -- 比赛人数：5人制、7人制、8人制、11人制
-    roster_size        INT  -- 大名单人数：每支参赛球队可报名的球员总数
+    match_player_count INT, -- 姣旇禌浜烘暟锛?浜哄埗銆?浜哄埗銆?浜哄埗銆?1浜哄埗
+    roster_size        INT  -- 澶у悕鍗曚汉鏁帮細姣忔敮鍙傝禌鐞冮槦鍙姤鍚嶇殑鐞冨憳鎬绘暟
 );
 
--- 赛事管理者表
+-- 璧涗簨绠＄悊鑰呰〃
 CREATE TABLE event_manager
 (
     event_id INT REFERENCES event (event_id),
@@ -268,7 +268,7 @@ CREATE TABLE event_manager
     PRIMARY KEY (event_id, user_id)
 );
 
--- 赛事-球队
+-- 璧涗簨-鐞冮槦
 CREATE TABLE event_team
 (
     event_id INT REFERENCES event (event_id) ON DELETE CASCADE,
@@ -276,18 +276,18 @@ CREATE TABLE event_team
     PRIMARY KEY (event_id, team_id)
 );
 
--- 赛事-球队-大名单（存储每个球队在赛事中的参赛球员）
+-- 璧涗簨-鐞冮槦-澶у悕鍗曪紙瀛樺偍姣忎釜鐞冮槦鍦ㄨ禌浜嬩腑鐨勫弬璧涚悆鍛樼悆鍛橈級
 CREATE TABLE event_team_roster
 (
     event_id  INT,
     team_id   INT,
     player_id INT REFERENCES player (player_id) ON DELETE CASCADE,
-    number    INT, -- 球衣号码
+    number    INT, -- 鐞冭。鍙风爜
     PRIMARY KEY (event_id, team_id, player_id),
     FOREIGN KEY (event_id, team_id) REFERENCES event_team (event_id, team_id) ON DELETE CASCADE
 );
 
--- 小组
+-- 灏忕粍
 CREATE TABLE event_group
 (
     group_id SERIAL PRIMARY KEY,
@@ -295,21 +295,21 @@ CREATE TABLE event_group
     name     VARCHAR(255) NOT NULL
 );
 
--- 小组-球队
+-- 灏忕粍-鐞冮槦
 CREATE TABLE event_group_team
 (
     group_id          INT REFERENCES event_group (group_id),
     team_id           INT REFERENCES team (team_id),
-    num_wins          INT DEFAULT 0, -- 胜场
-    num_draws         INT DEFAULT 0, -- 平局
-    num_losses        INT DEFAULT 0, -- 负场
-    num_goals_for     INT DEFAULT 0, -- 进球数
-    num_goals_against INT DEFAULT 0, -- 失球数
-    score             INT DEFAULT 0, -- 积分
+    num_wins          INT DEFAULT 0, -- 鑳滃満
+    num_draws         INT DEFAULT 0, -- 骞冲眬
+    num_losses        INT DEFAULT 0, -- 璐熷満
+    num_goals_for     INT DEFAULT 0, -- 杩涚悆鏁?
+    num_goals_against INT DEFAULT 0, -- 澶辩悆鏁?
+    score             INT DEFAULT 0, -- 绉垎
     PRIMARY KEY (group_id, team_id)
 );
 
--- 赛事邀请球队/球队申请加入赛事
+-- 璧涗簨閭?璇风悆闃?/鐞冮槦鐢宠鍔犲叆璧涗簨
 CREATE TABLE event_team_request
 (
     event_id     INT REFERENCES event (event_id),
@@ -320,7 +320,7 @@ CREATE TABLE event_team_request
     PRIMARY KEY (event_id, team_id, type)
 );
 
--- 更新last_updated触发器
+-- 鏇存柊last_updated瑙﹀彂鍣?
 CREATE TRIGGER update_last_updated_trigger
     BEFORE INSERT or
         UPDATE
@@ -329,7 +329,7 @@ CREATE TRIGGER update_last_updated_trigger
 EXECUTE FUNCTION update_last_updated_column();
 
 
--- 赛事-裁判
+-- 璧涗簨-瑁佸垽
 CREATE TABLE event_referee
 (
     event_id   INT REFERENCES event,
@@ -337,7 +337,7 @@ CREATE TABLE event_referee
     PRIMARY KEY (event_id, referee_id)
 );
 
--- 赛事邀请裁判
+-- 璧涗簨閭?璇疯鍒?
 CREATE TABLE event_referee_request
 (
     event_id     INT REFERENCES event,
@@ -347,7 +347,7 @@ CREATE TABLE event_referee_request
     PRIMARY KEY (event_id, referee_id)
 );
 
--- 更新last_updated触发器
+-- 鏇存柊last_updated瑙﹀彂鍣?
 CREATE TRIGGER update_last_updated_trigger
     BEFORE INSERT or
         UPDATE
@@ -356,25 +356,25 @@ CREATE TRIGGER update_last_updated_trigger
 EXECUTE FUNCTION update_last_updated_column();
 
 
--- 赛事-比赛阶段：小组赛、淘汰赛、排位赛等
+-- 璧涗簨-姣旇禌闃舵锛氬皬缁勮禌銆佹窐姹拌禌銆佹帓浣嶈禌绛?
 CREATE TABLE event_stage
 (
     event_id INT REFERENCES event,
-    stage    VARCHAR, -- 小组赛、淘汰赛、排位赛等
+    stage    VARCHAR, -- 灏忕粍璧涖?佹窐姹拌禌銆佹帓浣嶈禌绛?
     PRIMARY KEY (event_id, stage)
 );
 
--- 【赛事-比赛阶段】-标签：如stage=小组赛，tag=A组、B组等；stage=淘汰赛，tag=1/8决赛、1/4决赛等
+-- 銆愯禌浜?-姣旇禌闃舵銆?-鏍囩锛氬stage=灏忕粍璧涳紝tag=A缁勩?丅缁勭瓑锛泂tage=娣樻卑璧涳紝tag=1/8鍐宠禌銆?1/4鍐宠禌绛?
 CREATE TABLE event_stage_tag
 (
     event_id INT REFERENCES event,
-    stage    VARCHAR, -- 小组赛、淘汰赛、排位赛等
-    tag      VARCHAR, -- A组、B组等；1/8决赛、1/4决赛等
+    stage    VARCHAR, -- 灏忕粍璧涖?佹窐姹拌禌銆佹帓浣嶈禌绛?
+    tag      VARCHAR, -- A缁勩?丅缁勭瓑锛?1/8鍐宠禌銆?1/4鍐宠禌绛?
     FOREIGN KEY (event_id, stage) REFERENCES event_stage,
     PRIMARY KEY (event_id, stage, tag)
 );
 
--- 赛事-比赛
+-- 璧涗簨-姣旇禌
 CREATE TABLE event_match
 (
     event_id INT REFERENCES event,
@@ -387,7 +387,7 @@ CREATE TABLE event_match
     FOREIGN KEY (event_id, stage, tag) REFERENCES event_stage_tag
 );
 
--- 通知表
+-- 閫氱煡琛?
 CREATE TABLE notification
 (
     notification_id SERIAL PRIMARY KEY,
@@ -404,7 +404,7 @@ CREATE TABLE notification
     time            TIMESTAMP
 );
 
--- 收藏用户表
+-- 鏀惰棌鐢ㄦ埛琛?
 CREATE TABLE favorite_user
 (
     user_id     INT REFERENCES t_user (user_id),
@@ -412,7 +412,7 @@ CREATE TABLE favorite_user
     PRIMARY KEY (user_id, favorite_id)
 );
 
--- 收藏球队表
+-- 鏀惰棌鐞冮槦琛?
 CREATE TABLE favorite_team
 (
     user_id INT REFERENCES t_user (user_id),
@@ -420,7 +420,7 @@ CREATE TABLE favorite_team
     PRIMARY KEY (user_id, team_id)
 );
 
--- 收藏赛事表
+-- 鏀惰棌璧涗簨琛?
 CREATE TABLE favorite_event
 (
     user_id  INT REFERENCES t_user (user_id),
@@ -428,7 +428,7 @@ CREATE TABLE favorite_event
     PRIMARY KEY (user_id, event_id)
 );
 
--- 收藏比赛表
+-- 鏀惰棌姣旇禌琛?
 CREATE TABLE favorite_match
 (
     user_id  INT REFERENCES t_user (user_id),
@@ -436,7 +436,7 @@ CREATE TABLE favorite_match
     PRIMARY KEY (user_id, match_id)
 );
 
--- 比赛评论表
+-- 姣旇禌璇勮琛?
 CREATE TABLE match_comment
 (
     comment_id SERIAL PRIMARY KEY,
@@ -446,7 +446,7 @@ CREATE TABLE match_comment
     time       TIMESTAMP DEFAULT now()
 );
 
--- 二级评论表
+-- 浜岀骇璇勮琛?
 CREATE TABLE match_comment_reply
 (
     reply_id   SERIAL PRIMARY KEY,
@@ -456,7 +456,7 @@ CREATE TABLE match_comment_reply
     time       TIMESTAMP DEFAULT now()
 );
 
--- 评论点赞表
+-- 璇勮鐐硅禐琛?
 CREATE TABLE match_comment_like
 (
     user_id    INT REFERENCES t_user (user_id),
@@ -474,15 +474,15 @@ CREATE TABLE wx_article
 );
 
 
--- 语法
+-- 璇硶
 
--- CREATE FUNCTION function_name (参数列表)
--- RETURNS 返回类型 AS $$
+-- CREATE FUNCTION function_name (鍙傛暟鍒楄〃)
+-- RETURNS 杩斿洖绫诲瀷 AS $$
 -- DECLARE
---     -- 变量声明
+--     -- 鍙橀噺澹版槑
 -- BEGIN
---     -- 函数体，执行的SQL语句或逻辑
---     RETURN 结果;
+--     -- 鍑芥暟浣擄紝鎵ц鐨凷QL璇彞鎴栭?昏緫
+--     RETURN 缁撴灉;
 -- END;
 -- $$ LANGUAGE plpgsql;
 
@@ -501,7 +501,7 @@ meaning of zbak: z as the last letter of the alphabet, bak as backup
 
 */
 
--- 比赛表
+-- 姣旇禌琛?
 CREATE TABLE zbak_match
 (
     LIKE match INCLUDING ALL
@@ -511,26 +511,26 @@ CREATE TABLE zbak_match_manager
 (
     LIKE match_manager INCLUDING ALL
 );
--- 比赛(友谊赛)邀请球队
+-- 姣旇禌(鍙嬭皧璧?)閭?璇风悆闃?
 CREATE TABLE zbak_match_team_request
 (
     LIKE match_team_request INCLUDING ALL
 );
 
--- 比赛-裁判
+-- 姣旇禌-瑁佸垽
 CREATE TABLE zbak_match_referee
 (
     LIKE match_referee INCLUDING ALL
 );
 
--- 比赛邀请裁判
+-- 姣旇禌閭?璇疯鍒?
 CREATE TABLE zbak_match_referee_request
 (
     LIKE match_referee_request INCLUDING ALL
 );
 
 
--- 比赛-球员行为（进球、红牌、黄牌）
+-- 姣旇禌-鐞冨憳琛屼负锛堣繘鐞冦?佺孩鐗屻?侀粍鐗岋級
 CREATE TABLE zbak_match_player_action
 (
     LIKE match_player_action INCLUDING ALL
@@ -551,73 +551,73 @@ CREATE TABLE zbak_match_player
     LIKE match_player INCLUDING ALL
 );
 
--- 赛事表
+-- 璧涗簨琛?
 CREATE TABLE zbak_event
 (
     LIKE event INCLUDING ALL
 );
 
--- 赛事管理者表
+-- 璧涗簨绠＄悊鑰呰〃
 CREATE TABLE zbak_event_manager
 (
     LIKE event_manager INCLUDING ALL
 );
 
--- 赛事-球队
+-- 璧涗簨-鐞冮槦
 CREATE TABLE zbak_event_team
 (
     LIKE event_team INCLUDING ALL
 );
 
--- 赛事-球队-大名单
+-- 璧涗簨-鐞冮槦-澶у悕鍗?
 CREATE TABLE zbak_event_team_roster
 (
     LIKE event_team_roster INCLUDING ALL
 );
 
--- 小组
+-- 灏忕粍
 CREATE TABLE zbak_event_group
 (
     LIKE event_group INCLUDING ALL
 );
 
--- 小组-球队
+-- 灏忕粍-鐞冮槦
 CREATE TABLE zbak_event_group_team
 (
     LIKE event_group_team INCLUDING ALL
 );
 
--- 赛事邀请球队/球队申请加入赛事
+-- 璧涗簨閭?璇风悆闃?/鐞冮槦鐢宠鍔犲叆璧涗簨
 CREATE TABLE zbak_event_team_request
 (
     LIKE event_team_request INCLUDING ALL
 );
 
--- 赛事-裁判
+-- 璧涗簨-瑁佸垽
 CREATE TABLE zbak_event_referee
 (
     LIKE event_referee INCLUDING ALL
 );
 
--- 赛事邀请裁判
+-- 璧涗簨閭?璇疯鍒?
 CREATE TABLE zbak_event_referee_request
 (
     LIKE event_referee_request INCLUDING ALL
 );
 
--- 赛事-比赛阶段：小组赛、淘汰赛、排位赛等
+-- 璧涗簨-姣旇禌闃舵锛氬皬缁勮禌銆佹窐姹拌禌銆佹帓浣嶈禌绛?
 CREATE TABLE zbak_event_stage
 (
     LIKE event_stage INCLUDING ALL
 );
 
--- 【赛事-比赛阶段】-标签：如stage=小组赛，tag=A组、B组等；stage=淘汰赛，tag=1/8决赛、1/4决赛等
+-- 銆愯禌浜?-姣旇禌闃舵銆?-鏍囩锛氬stage=灏忕粍璧涳紝tag=A缁勩?丅缁勭瓑锛泂tage=娣樻卑璧涳紝tag=1/8鍐宠禌銆?1/4鍐宠禌绛?
 CREATE TABLE zbak_event_stage_tag
 (
     LIKE event_stage_tag INCLUDING ALL
 );
 
--- 赛事-比赛
+-- 璧涗簨-姣旇禌
 CREATE TABLE zbak_event_match
 (
     LIKE event_match INCLUDING ALL
@@ -655,7 +655,7 @@ CREATE
     RETURNS TRIGGER AS
 $$
 BEGIN
-    -- 复制表A的被删除行到备份表
+    -- 澶嶅埗琛ˋ鐨勮鍒犻櫎琛屽埌澶囦唤琛?
     INSERT INTO zbak_match
     SELECT *
     FROM match
@@ -736,7 +736,7 @@ BEGIN
     FROM favorite_match
     WHERE match_id = OLD.match_id;
 
--- 返回OLD以允许删除操作继续
+-- 杩斿洖OLD浠ュ厑璁稿垹闄ゆ搷浣滅户缁?
     RETURN OLD;
 END
 $$
@@ -754,7 +754,7 @@ CREATE
 $$
 BEGIN
 
-    -- 开始复制
+    -- 寮?濮嬪鍒?
 
     INSERT INTO zbak_event
     SELECT *
@@ -818,7 +818,7 @@ BEGIN
     FROM event_match
     WHERE event_id = OLD.event_id;
 
--- 开始删除
+-- 寮?濮嬪垹闄?
 
     DELETE
     FROM event_match
@@ -870,20 +870,20 @@ BEGIN
     FROM favorite_event
     WHERE event_id = OLD.event_id;
 
--- 返回OLD以允许删除操作继续
+-- 杩斿洖OLD浠ュ厑璁稿垹闄ゆ搷浣滅户缁?
     RETURN OLD;
 END;
 $$
     LANGUAGE plpgsql;
 
--- 创建触发器
+-- 鍒涘缓瑙﹀彂鍣?
 CREATE TRIGGER trigger_backup_and_delete
     BEFORE DELETE
     ON event
     FOR EACH ROW
 EXECUTE FUNCTION backup_and_delete_event();
 
--- 文件hash表
+-- 鏂囦欢hash琛?
 CREATE TABLE file_hash
 (
     file_id  SERIAL PRIMARY KEY,
@@ -892,16 +892,16 @@ CREATE TABLE file_hash
 );
 
 -- -------------
--- 三级权限制相关的表
+-- 涓夌骇鏉冮檺鍒剁浉鍏崇殑琛?
 
--- 第一级权限表
+-- 绗竴绾ф潈闄愯〃
 CREATE TABLE first_level_authority
 (
     username     VARCHAR(255) PRIMARY KEY ,
     password     VARCHAR(255) NOT NULL
 );
 
--- 第二级权限表
+-- 绗簩绾ф潈闄愯〃
 CREATE TABLE second_level_authority
 (
     authority_id   SERIAL PRIMARY KEY,
@@ -911,7 +911,7 @@ CREATE TABLE second_level_authority
     create_user_id INT REFERENCES t_user
 );
 
--- 第三级权限表
+-- 绗笁绾ф潈闄愯〃
 CREATE TABLE third_level_authority
 (
     authority_id              SERIAL PRIMARY KEY,
@@ -921,35 +921,29 @@ CREATE TABLE third_level_authority
     create_user_id            INT REFERENCES t_user
 );
 
--- 关系表：球队-创建者
+-- 鍏崇郴琛細鐞冮槦-鍒涘缓鑰?
 CREATE TABLE team_creator
 (
     team_id                INT REFERENCES team PRIMARY KEY,
-    user_id                INT REFERENCES t_user, -- 创建的用户
-    create_authority_level INT DEFAULT 0,         -- 0：未知；1：一级权限创建；2：二级权限创建；3：三级权限创建
-    create_authority_id    INT DEFAULT 0          -- 创建者若为二级权限或三级权限，则记录其ID，否则为0
+    user_id                INT REFERENCES t_user, -- 鍒涘缓鐨勭敤鎴?
+    create_authority_level INT DEFAULT 0,         -- 0锛氭湭鐭ワ紱1锛氫竴绾ф潈闄愬垱寤猴紱2锛氫簩绾ф潈闄愬垱寤猴紱3锛氫笁绾ф潈闄愬垱寤?
+    create_authority_id    INT DEFAULT 0          -- 鍒涘缓鑰呰嫢涓轰簩绾ф潈闄愭垨涓夌骇鏉冮檺锛屽垯璁板綍鍏禝D锛屽惁鍒欎负0
 );
 
--- 关系表：友谊赛-创建者（赛事比赛不在此记录）
+-- 鍏崇郴琛細鍙嬭皧璧?-鍒涘缓鑰咃紙璧涗簨姣旇禌涓嶅湪姝よ褰曪級
 CREATE TABLE match_creator
 (
     match_id               INT REFERENCES match PRIMARY KEY,
-    user_id                INT REFERENCES t_user, -- 创建的用户
-    create_authority_level INT DEFAULT 0,         -- 0：未知；1：一级权限创建；2：二级权限创建；3：三级权限创建
-    create_authority_id    INT DEFAULT 0          -- 创建者若为二级权限或三级权限，则记录其ID，否则为0
+    user_id                INT REFERENCES t_user, -- 鍒涘缓鐨勭敤鎴?
+    create_authority_level INT DEFAULT 0,         -- 0锛氭湭鐭ワ紱1锛氫竴绾ф潈闄愬垱寤猴紱2锛氫簩绾ф潈闄愬垱寤猴紱3锛氫笁绾ф潈闄愬垱寤?
+    create_authority_id    INT DEFAULT 0          -- 鍒涘缓鑰呰嫢涓轰簩绾ф潈闄愭垨涓夌骇鏉冮檺锛屽垯璁板綍鍏禝D锛屽惁鍒欎负0
 );
 
--- 关系表：赛事-创建者
+-- 鍏崇郴琛細璧涗簨-鍒涘缓鑰?
 CREATE TABLE event_creator
 (
     event_id               INT REFERENCES event PRIMARY KEY,
-    user_id                INT REFERENCES t_user, -- 创建的用户
-    create_authority_level INT DEFAULT 0,         -- 0：未知；1：一级权限创建；2：二级权限创建；3：三级权限创建
-    create_authority_id    INT DEFAULT 0          -- 创建者若为二级权限或三级权限，则记录其ID，否则为0
+    user_id                INT REFERENCES t_user, -- 鍒涘缓鐨勭敤鎴?
+    create_authority_level INT DEFAULT 0,         -- 0锛氭湭鐭ワ紱1锛氫竴绾ф潈闄愬垱寤猴紱2锛氫簩绾ф潈闄愬垱寤猴紱3锛氫笁绾ф潈闄愬垱寤?
+    create_authority_id    INT DEFAULT 0          -- 鍒涘缓鑰呰嫢涓轰簩绾ф潈闄愭垨涓夌骇鏉冮檺锛屽垯璁板綍鍏禝D锛屽惁鍒欎负0
 );
-
-
--- 为request表增加has_read和is_deleted字段
-alter table zbak_event_team_request
-    add has_read bool default false not null,
-    add is_deleted bool default false not null;

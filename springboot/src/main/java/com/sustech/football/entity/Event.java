@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -110,6 +111,15 @@ public class Event {
 
     @Schema(description = "赛事简介", example = "2024 年书院杯是一项由南科大举办的校内足球赛事")
     private String description;
+
+    @Schema(description = "比赛人数（几人制）", example = "11")
+    private Integer matchPlayerCount;
+
+    @Schema(description = "大名单人数（每支参赛球队可报名的球员总数）", example = "23")
+    private Integer rosterSize;
+
+    @Schema(description = "大名单截止日期", example = "2026-03-01T18:00:00")
+    private LocalDateTime rosterDeadline;
 
     @TableField(exist = false)
     @Schema(description = "赛事管理员 ID 列表")
