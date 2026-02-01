@@ -1,0 +1,6 @@
+
+ALTER TABLE event
+    ADD COLUMN IF NOT EXISTS roster_deadline TIMESTAMP;
+
+ALTER TABLE zbak_event
+    ADD COLUMN IF NOT EXISTS roster_deadline TIMESTAMP;

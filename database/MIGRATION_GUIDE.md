@@ -107,6 +107,24 @@ psql -U your_username -d your_database -f "d:\26Spring\SustechFootball\SUSTech-F
 
 ---
 
+### 6️⃣ migration_add_roster_deadline.sql
+
+**执行命令：**
+```powershell
+psql -U your_username -d your_database -f "d:\26Spring\SustechFootball\SUSTech-Football-Backend\database\migration_add_roster_deadline.sql"
+```
+
+**作用：**
+- 给 `event` 表添加 `roster_deadline` 字段（大名单截止日期）
+- 给备份表 `zbak_event` 添加 `roster_deadline` 字段
+
+**原因：**
+- 赛事管理员可以设置球队提交大名单的截止时间
+- 超过截止时间后，球队无法再修改大名单
+- 备份表必须同步更新以保持结构一致
+
+---
+
 ## 快速执行（一次性执行所有脚本）
 
 如果你确定以上脚本都未执行过，可以使用以下命令一次性执行：
@@ -131,6 +149,9 @@ psql -U your_username -d your_database -f fix_backup_function_error.sql
 # 5. 修复级联删除约束（推荐）
 psql -U your_username -d your_database -f fix_all_event_cascade_constraints.sql
 
+# 6. 添加大名单截止日期字段
+psql -U your_username -d your_database -f migration_add_roster_deadline.sql
+
 echo "所有迁移脚本执行完成！"
 ```
 
@@ -145,13 +166,13 @@ echo "所有迁移脚本执行完成！"
 SELECT column_name, data_type 
 FROM information_schema.columns 
 WHERE table_name = 'event' 
-  AND column_name IN ('match_player_count', 'roster_size');
+  AND column_name IN ('match_player_count', 'roster_size', 'roster_deadline');
 
 -- 2. 验证 zbak_event 表的新字段
 SELECT column_name, data_type 
 FROM information_schema.columns 
 WHERE table_name = 'zbak_event' 
-  AND column_name IN ('match_player_count', 'roster_size');
+  AND column_name IN ('match_player_count', 'roster_size', 'roster_deadline');
 
 -- 3. 验证 event_team_roster 表是否存在
 SELECT table_name 
@@ -215,12 +236,13 @@ ORDER BY tc.table_name;
 
 ## 总结
 
-按照以上顺序执行完5个迁移脚本后：
+按照以上顺序执行完6个迁移脚本后：
 
 ✅ 赛事表支持比赛人数和大名单人数字段  
 ✅ 备份表结构与主表同步，删除功能正常  
 ✅ 大名单表创建完成，支持球队选择参赛球员  
 ✅ 备份函数包含大名单数据的备份逻辑  
 ✅ 所有外键约束支持级联删除，数据一致性有保障  
+✅ 赛事支持设置大名单截止日期，超时后球队无法修改大名单  
 
 现在可以重启后端并进行完整的功能测试！
