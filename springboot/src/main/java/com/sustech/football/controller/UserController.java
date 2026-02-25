@@ -2,6 +2,9 @@ package com.sustech.football.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sustech.football.entity.Match;
 import com.sustech.football.entity.User;
 import com.sustech.football.entity.UserRole;
@@ -14,11 +17,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -30,6 +37,7 @@ public class UserController {
     private UserService userService;
     private String appid = "wxca12f9a07b0c63e2";
     private String appsecret = "1d3743bc2b7b109493ba284ccbaa2420";
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
     public UserController(UserService userService) {
@@ -42,10 +50,85 @@ public class UserController {
     @PostMapping("/wxLogin")
     @Operation(summary = "微信登录", description = "使用微信小程序登录")
     @Parameter(name = "code", description = "微信登录凭证", required = true)
-    public ResponseEntity<String> wxLogin(String code) {
-        String url = "https://api.weixin.qq.com/sns/jscode2session?appid=" + appid + "&secret=" + appsecret + "&js_code=" + code + "&grant_type=authorization_code";
-        String response = restTemplate.getForObject(url, String.class);
-        return ResponseEntity.ok().body(response);
+    public ResponseEntity<Map> wxLogin(String code) {
+//        String url = "https://api.weixin.qq.com/sns/jscode2session?appid=" + appid + "&secret=" + appsecret + "&js_code=" + code + "&grant_type=authorization_code";
+//        String response = restTemplate.getForObject(url, String.class);
+//        return ResponseEntity.ok().body(response);
+
+        // 1. 校验入参
+        if (code == null || code.trim().isEmpty()) {
+            throw new BadRequestException("登录凭证code不能为空");
+        }
+
+        // 2. 拼接微信接口地址，获取session_key和openid
+        String wxUrl = String.format(
+                "https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code",
+                appid, appsecret, code
+        );
+
+        // 3. 调用微信接口并解析返回结果（用Map接收JSON，避免创建冗余实体类）
+        String wxResponseStr;
+        try {
+            wxResponseStr = restTemplate.getForObject(wxUrl, String.class);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "调用微信登录接口失败：" + e.getMessage());
+        }
+
+        Map<String, String> wxResponse;
+        try {
+            wxResponse = objectMapper.readValue(wxResponseStr, Map.class);
+        } catch (JsonProcessingException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    String.format("解析微信登录JSON失败：原始响应=[%s]，错误原因=[%s]", wxResponseStr, e.getMessage()),
+                    e
+            );
+        }
+
+        // 4. 校验微信接口返回结果（防止返回错误信息，如code无效）
+        if (wxResponse == null || wxResponse.containsKey("errcode")) {
+            String errMsg = wxResponse != null ? wxResponse.get("errmsg") : "微信接口返回空";
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "微信登录失败：" + errMsg);
+        }
+
+        // 5. 提取session_key和openid
+        String sessionKey = wxResponse.get("session_key");
+        String openid = wxResponse.get("openid");
+        if (sessionKey == null || openid == null) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "解析微信登录信息失败");
+        }
+
+        // 6. 查询/新增/更新用户信息
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("openid", openid); // 用eq精准匹配，like会导致查询不准确
+        User user = userService.getOne(queryWrapper);
+
+        if (user == null) {
+            // 6.1 新增用户
+            user = new User();
+            user.setOpenid(openid);
+            user.setSessionKey(sessionKey); // 假设User类有setter方法
+            if (!userService.save(user)) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "注册失败");
+            }
+        } else {
+            // 6.2 更新用户session_key
+            UpdateWrapper<User> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq("openid", openid)
+                    .set("session_key", sessionKey);
+            if (!userService.update(updateWrapper)) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "更新用户session_key失败");
+            }
+        }
+
+        // 7. 封装返回结果（包含微信响应+用户信息）
+        Map<String, Object> result = new HashMap<>();
+        result.put("openid", openid); // 微信唯一标识
+        result.put("session_key", sessionKey); // 微信会话密钥
+        result.put("userId", user.getUserId());
+        result.put("nickName", user.getNickName());
+
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/login")
