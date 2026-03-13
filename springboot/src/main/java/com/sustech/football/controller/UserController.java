@@ -3,12 +3,11 @@ package com.sustech.football.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sustech.football.entity.Match;
-import com.sustech.football.entity.User;
-import com.sustech.football.entity.UserRole;
+import com.sustech.football.entity.*;
 import com.sustech.football.exception.*;
+import com.sustech.football.service.EventManagerService;
+import com.sustech.football.service.EventTeamRequestService;
 import com.sustech.football.service.UserService;
 import com.sustech.football.utils.WXBizDataCrypt;
 
@@ -39,9 +38,15 @@ public class UserController {
     private String appsecret = "1d3743bc2b7b109493ba284ccbaa2420";
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    private final EventManagerService eventManagerService;
+
+    private final EventTeamRequestService eventTeamRequestService;
+
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService, EventManagerService eventManagerService, EventTeamRequestService eventTeamRequestService) {
         this.userService = userService;
+        this.eventManagerService = eventManagerService;
+        this.eventTeamRequestService = eventTeamRequestService;
     }
 
     @Autowired
@@ -299,6 +304,38 @@ public class UserController {
             throw new ResourceNotFoundException("用户不存在");
         }
         return userService.getRefereeId(userId);
+    }
+
+    @PostMapping("/event/team/readReplies")
+    @Operation(summary = "标记赛事邀请回复为已阅", description = "提供用户 ID，标记用户管理的赛事邀请回复为已阅")
+    @Parameter(name = "userId", description = "用户 ID", required = true)
+    public void readEventTeamReplies(Long userId) {
+        if (userId == null) {
+            throw new BadRequestException("用户ID不能为空");
+        }
+
+        if (userService.getById(userId) == null) {
+            throw new ResourceNotFoundException("用户不存在");
+        }
+
+        List<Long> eventIds = eventManagerService.list(
+                new QueryWrapper<EventManager>()
+                        .eq("user_id", userId)
+        ).stream().map(EventManager::getEventId).toList();
+
+        if (eventIds.isEmpty()) {
+            throw new ResourceNotFoundException("用户未管理任何赛事");
+        }
+
+        List<EventTeamRequest> eventTeamRequests = eventTeamRequestService.list(
+                new QueryWrapper<EventTeamRequest>()
+                        .in("event_id", eventIds)
+                        .eq("has_read", false)
+        );
+        eventTeamRequests.forEach(request -> {
+            request.setHasRead(true);
+            eventTeamRequestService.updateByMultiId(request);
+        });
     }
 
     @GetMapping("/getAllRoleUsers")
