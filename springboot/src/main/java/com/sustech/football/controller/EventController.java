@@ -5,6 +5,7 @@ import com.sustech.football.entity.*;
 import com.sustech.football.exception.BadRequestException;
 import com.sustech.football.exception.ResourceNotFoundException;
 import com.sustech.football.model.event.VoEvent;
+import com.sustech.football.model.team.VoTeam;
 import com.sustech.football.service.*;
 
 import io.swagger.v3.oas.annotations.*;
@@ -17,6 +18,9 @@ import java.sql.Timestamp;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @CrossOrigin
 @RestController
@@ -53,6 +57,8 @@ public class EventController {
     private EventTeamRosterService eventTeamRosterService;
     @Autowired
     private PlayerService playerService;
+    @Autowired
+    private EventMatchService eventMatchService;
 
     public record Match_GET(
             Long matchId,
@@ -491,6 +497,118 @@ public class EventController {
             throw new ResourceNotFoundException("赛事不存在");
         }
         return eventService.getTeams(eventId);
+    }
+
+    @GetMapping("/team/get")
+    @Operation(summary = "获取赛事中的球队详情", description = "提供赛事 ID 和球队 ID，返回该球队在赛事中的比赛与球员数据")
+    @Parameters({
+            @Parameter(name = "eventId", description = "赛事 ID", required = true),
+            @Parameter(name = "teamId", description = "球队 ID", required = true)
+    })
+    public VoTeam getEventTeam(Long eventId, Long teamId) {
+        if (eventId == null || teamId == null) {
+            throw new BadRequestException("传入的赛事ID或球队ID为空");
+        }
+        if (eventService.getById(eventId) == null) {
+            throw new ResourceNotFoundException("赛事不存在");
+        }
+        Team team = teamService.getById(teamId);
+        if (team == null) {
+            throw new ResourceNotFoundException("球队不存在");
+        }
+        if (eventTeamService.getOne(new QueryWrapper<EventTeam>().eq("event_id", eventId).eq("team_id", teamId)) == null) {
+            throw new BadRequestException("球队未参加该赛事");
+        }
+
+        List<Match> matchList = eventMatchService.listWithMatch(eventId).stream()
+                .map(EventMatch::getMatch)
+                .filter(match -> teamId.equals(match.getHomeTeamId()) || teamId.equals(match.getAwayTeamId()))
+                .sorted(Comparator.comparing(Match::getTime))
+                .peek(match -> {
+                    match.setHomeTeam(teamService.getById(match.getHomeTeamId()));
+                    match.setAwayTeam(teamService.getById(match.getAwayTeamId()));
+                    match.setMatchPlayerActionList(matchService.getMatchPlayerActions(match.getMatchId()));
+                })
+                .toList();
+
+        // 预先整理比赛事件，便于下方统计球员数据
+        Map<Long, List<MatchPlayerAction>> matchActionsMap = matchList.stream()
+            .collect(Collectors.toMap(Match::getMatchId, Match::getMatchPlayerActionList));
+
+        QueryWrapper<EventTeamRoster> rosterQueryWrapper = new QueryWrapper<>();
+        rosterQueryWrapper.eq("event_id", eventId).eq("team_id", teamId);
+        List<EventTeamRoster> rosterList = eventTeamRosterService.list(rosterQueryWrapper);
+
+        List<VoTeam.VoPlayer> playerList = rosterList.stream()
+                .map(roster -> {
+                    Player player = playerService.getById(roster.getPlayerId());
+                    if (player == null) {
+                        return null;
+                    }
+
+                    int goals = 0;
+                    int assists = 0;
+                    int yellowCards = 0;
+                    int redCards = 0;
+                    int appearances = 0;
+
+                    for (Match match : matchList) {
+                        List<MatchPlayerAction> actions = matchActionsMap.getOrDefault(match.getMatchId(), List.of());
+                        List<MatchPlayerAction> playerActions = actions.stream()
+                                .filter(action -> teamId.equals(action.getTeamId()))
+                                .filter(action -> roster.getPlayerId().equals(action.getPlayerId()))
+                                .toList();
+                        if (!playerActions.isEmpty()) {
+                            appearances++;
+                        }
+                        for (MatchPlayerAction action : playerActions) {
+                            if (MatchPlayerAction.GOAL.equals(action.getAction())) {
+                                goals++;
+                            } else if (MatchPlayerAction.ASSIST.equals(action.getAction())) {
+                                assists++;
+                            } else if (MatchPlayerAction.YELLOW_CARD.equals(action.getAction())) {
+                                yellowCards++;
+                            } else if (MatchPlayerAction.RED_CARD.equals(action.getAction())) {
+                                redCards++;
+                            }
+                        }
+                    }
+
+                    return new VoTeam.VoPlayer(
+                            player.getPlayerId(),
+                            player.getName(),
+                            player.getPhotoUrl(),
+                            roster.getNumber(),
+                            appearances,
+                            goals,
+                            assists,
+                            yellowCards,
+                            redCards
+                    );
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+        VoTeam voTeam = new VoTeam();
+        voTeam.setTeamId(team.getTeamId());
+        voTeam.setName(team.getName());
+        voTeam.setLogoUrl(team.getLogoUrl());
+        voTeam.setDescription(team.getDescription());
+        voTeam.setCaptainId(team.getCaptainId());
+        voTeam.setCoachList(teamService.getCoaches(teamId));
+        voTeam.setPlayerList(playerList);
+        voTeam.setMatchList(matchList);
+        voTeam.setManagerList(teamService.getManagers(teamId).stream().map(userId -> {
+            VoTeam.VoUser voUser = new VoTeam.VoUser();
+            User user = userService.getById(userId);
+            if (user != null) {
+                voUser.setUserId(user.getUserId());
+                voUser.setAvatarUrl(user.getAvatarUrl());
+                voUser.setNickName(user.getNickName());
+            }
+            return voUser;
+        }).toList());
+        return voTeam;
     }
 
     @DeleteMapping("/team/delete")
