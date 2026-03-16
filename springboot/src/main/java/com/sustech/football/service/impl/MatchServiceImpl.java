@@ -328,6 +328,19 @@ public class MatchServiceImpl extends ServiceImpl<MatchMapper, Match> implements
 
             // 更新小组积分
             eventGroupTeam_home.setScore(eventGroupTeam_home.getNumWins() * 3 + eventGroupTeam_home.getNumDraws());
+            eventGroupTeam_away.setScore(eventGroupTeam_away.getNumWins() * 3 + eventGroupTeam_away.getNumDraws());
+
+            // 持久化更新后的分组积分与统计
+            if (eventGroupTeamMapper.update(eventGroupTeam_home, new QueryWrapper<EventGroupTeam>()
+                    .eq("group_id", eventGroupTeam_home.getGroupId())
+                    .eq("team_id", eventGroupTeam_home.getTeamId())) < 1) {
+                throw new InternalServerErrorException("更新小组赛积分失败（主队）");
+            }
+            if (eventGroupTeamMapper.update(eventGroupTeam_away, new QueryWrapper<EventGroupTeam>()
+                    .eq("group_id", eventGroupTeam_away.getGroupId())
+                    .eq("team_id", eventGroupTeam_away.getTeamId())) < 1) {
+                throw new InternalServerErrorException("更新小组赛积分失败（客队）");
+            }
         }
         return true;
     }
