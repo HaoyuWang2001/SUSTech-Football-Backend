@@ -1042,9 +1042,9 @@ public class EventController {
         if (eventId == null || teamId == null) {
             throw new BadRequestException("赛事ID或球队ID为空");
         }
-        if (playerIds == null || playerIds.isEmpty()) {
-            throw new BadRequestException("球员列表为空");
-        }
+//        if (playerIds == null || playerIds.isEmpty()) {
+//            throw new BadRequestException("球员列表为空");
+//        }
 
         Event event = eventService.getById(eventId);
         if (event == null) {
@@ -1063,12 +1063,12 @@ public class EventController {
         }
 
         // 检查人数是否符合要求
-        if (event.getRosterSize() != null && playerIds.size() > event.getRosterSize()) {
+        if (event.getRosterSize() != 0 && playerIds.size() > event.getRosterSize()) {
             throw new BadRequestException("大名单人数超过限制（最多" + event.getRosterSize() + "人）");
         }
-        if (event.getMatchPlayerCount() != null && playerIds.size() < event.getMatchPlayerCount()) {
-            throw new BadRequestException("大名单人数不足（至少" + event.getMatchPlayerCount() + "人）");
-        }
+//        if (event.getMatchPlayerCount() != null && playerIds.size() < event.getMatchPlayerCount()) {
+//            throw new BadRequestException("大名单人数不足（至少" + event.getMatchPlayerCount() + "人）");
+//        }
 
         // 验证所有球员都属于该球队
         for (Long playerId : playerIds) {
