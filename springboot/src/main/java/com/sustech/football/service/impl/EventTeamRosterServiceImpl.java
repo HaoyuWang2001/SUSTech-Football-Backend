@@ -29,7 +29,7 @@ public class EventTeamRosterServiceImpl extends ServiceImpl<EventTeamRosterMappe
     @Override
     @Transactional
     public boolean setRoster(Long eventId, Long teamId, List<Long> playerIds) {
-        if (eventId == null || teamId == null || playerIds == null || playerIds.isEmpty()) {
+        if (eventId == null || teamId == null || playerIds == null) {
             return false;
         }
 
