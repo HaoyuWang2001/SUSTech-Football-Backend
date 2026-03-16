@@ -49,7 +49,11 @@ public class EventTeamRosterServiceImpl extends ServiceImpl<EventTeamRosterMappe
             EventTeamRoster roster = new EventTeamRoster(eventId, teamId, playerId, playerNumberMap.get(playerId));
             rosterList.add(roster);
         }
-        
+
+        if (rosterList.isEmpty()) {
+            return true; // 没有球员需要添加，直接返回成功
+        }
+
         return this.saveBatch(rosterList);
     }
 
