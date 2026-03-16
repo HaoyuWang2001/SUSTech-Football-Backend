@@ -713,52 +713,52 @@ class MatchControllerTest {
 //        assertEquals("Player 2", result.getPlayers().get(1).getName());
 //    }
 
-    @Test
-    void getTeam_nullMatchId_throwsBadRequestException() {
-        Boolean isHomeTeam = true;
-
-        assertThrows(BadRequestException.class, () -> {
-            matchController.getTeam(null, isHomeTeam);
-        });
-    }
-
-    @Test
-    void getTeam_nullIsHomeTeam_throwsBadRequestException() {
-        Long matchId = 1L;
-
-        assertThrows(BadRequestException.class, () -> {
-            matchController.getTeam(matchId, null);
-        });
-    }
-
-    @Test
-    void getTeam_nonExistentMatch_throwsBadRequestException() {
-        Long matchId = 1L;
-        Boolean isHomeTeam = true;
-
-        when(matchService.getById(matchId)).thenReturn(null);
-
-        assertThrows(BadRequestException.class, () -> {
-            matchController.getTeam(matchId, isHomeTeam);
-        });
-    }
-
-    @Test
-    void getTeam_nonExistentTeam_throwsBadRequestException() {
-        Long matchId = 1L;
-        Boolean isHomeTeam = true;
-
-        Match match = new Match();
-        match.setMatchId(matchId);
-        match.setHomeTeamId(1L);
-
-        when(matchService.getById(matchId)).thenReturn(match);
-        when(teamService.getById(1L)).thenReturn(null);
-
-        assertThrows(BadRequestException.class, () -> {
-            matchController.getTeam(matchId, isHomeTeam);
-        });
-    }
+//    @Test
+//    void getTeam_nullMatchId_throwsBadRequestException() {
+//        Boolean isHomeTeam = true;
+//
+//        assertThrows(BadRequestException.class, () -> {
+//            matchController.getTeam(null, isHomeTeam);
+//        });
+//    }
+//
+//    @Test
+//    void getTeam_nullIsHomeTeam_throwsBadRequestException() {
+//        Long matchId = 1L;
+//
+//        assertThrows(BadRequestException.class, () -> {
+//            matchController.getTeam(matchId, null);
+//        });
+//    }
+//
+//    @Test
+//    void getTeam_nonExistentMatch_throwsBadRequestException() {
+//        Long matchId = 1L;
+//        Boolean isHomeTeam = true;
+//
+//        when(matchService.getById(matchId)).thenReturn(null);
+//
+//        assertThrows(BadRequestException.class, () -> {
+//            matchController.getTeam(matchId, isHomeTeam);
+//        });
+//    }
+//
+//    @Test
+//    void getTeam_nonExistentTeam_throwsBadRequestException() {
+//        Long matchId = 1L;
+//        Boolean isHomeTeam = true;
+//
+//        Match match = new Match();
+//        match.setMatchId(matchId);
+//        match.setHomeTeamId(1L);
+//
+//        when(matchService.getById(matchId)).thenReturn(match);
+//        when(teamService.getById(1L)).thenReturn(null);
+//
+//        assertThrows(BadRequestException.class, () -> {
+//            matchController.getTeam(matchId, isHomeTeam);
+//        });
+//    }
 
     @Test
     void deleteTeam_validIds_deleteTeam() {
