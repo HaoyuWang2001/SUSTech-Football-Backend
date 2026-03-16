@@ -49,6 +49,7 @@ public class EventTeamRosterServiceImpl extends ServiceImpl<EventTeamRosterMappe
             EventTeamRoster roster = new EventTeamRoster(eventId, teamId, playerId, playerNumberMap.get(playerId));
             rosterList.add(roster);
         }
+        
         return this.saveBatch(rosterList);
     }
 

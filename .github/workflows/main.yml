@@ -20,8 +20,7 @@ jobs:
         with:
           command: |
             cd ~/SUSTech-Football/
-            git fetch origin main
-            git reset --hard origin/main
+            git pull origin main
             ./deploy_script.sh
           host: ${{ secrets.HOST }}
           username: lighthouse
