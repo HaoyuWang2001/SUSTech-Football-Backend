@@ -7,18 +7,24 @@ import com.sustech.football.entity.Player;
 import com.sustech.football.mapper.EventTeamRosterMapper;
 import com.sustech.football.service.EventTeamRosterService;
 import com.sustech.football.service.PlayerService;
+import com.sustech.football.service.TeamPlayerService;
+import com.sustech.football.entity.TeamPlayer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class EventTeamRosterServiceImpl extends ServiceImpl<EventTeamRosterMapper, EventTeamRoster> implements EventTeamRosterService {
 
     @Autowired
     private PlayerService playerService;
+    @Autowired
+    private TeamPlayerService teamPlayerService;
 
     @Override
     @Transactional
@@ -26,6 +32,11 @@ public class EventTeamRosterServiceImpl extends ServiceImpl<EventTeamRosterMappe
         if (eventId == null || teamId == null || playerIds == null || playerIds.isEmpty()) {
             return false;
         }
+
+        Map<Long, Integer> playerNumberMap = teamPlayerService
+                .list(new QueryWrapper<TeamPlayer>().eq("team_id", teamId))
+                .stream()
+                .collect(Collectors.toMap(TeamPlayer::getPlayerId, TeamPlayer::getNumber, (a, b) -> a));
 
         // 删除旧的大名单
         QueryWrapper<EventTeamRoster> queryWrapper = new QueryWrapper<>();
@@ -35,7 +46,7 @@ public class EventTeamRosterServiceImpl extends ServiceImpl<EventTeamRosterMappe
         // 插入新的大名单
         List<EventTeamRoster> rosterList = new ArrayList<>();
         for (Long playerId : playerIds) {
-            EventTeamRoster roster = new EventTeamRoster(eventId, teamId, playerId);
+            EventTeamRoster roster = new EventTeamRoster(eventId, teamId, playerId, playerNumberMap.get(playerId));
             rosterList.add(roster);
         }
 
