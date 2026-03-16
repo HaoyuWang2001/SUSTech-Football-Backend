@@ -86,15 +86,15 @@ public class EventController {
         if (event.getEventId() != null) {
             throw new BadRequestException("赛事不能id");
         }
-        if (event.getMatchPlayerCount() != null && event.getMatchPlayerCount() != 5 
-            && event.getMatchPlayerCount() != 7 && event.getMatchPlayerCount() != 8 
-            && event.getMatchPlayerCount() != 11) {
-            throw new BadRequestException("比赛人数必须是5、7、8或11");
-        }
-        if (event.getRosterSize() != null && event.getMatchPlayerCount() != null 
-            && event.getRosterSize() < event.getMatchPlayerCount()) {
-            throw new BadRequestException("大名单人数不能小于比赛人数");
-        }
+//        if (event.getMatchPlayerCount() != null && event.getMatchPlayerCount() != 5
+//            && event.getMatchPlayerCount() != 7 && event.getMatchPlayerCount() != 8
+//            && event.getMatchPlayerCount() != 11) {
+//            throw new BadRequestException("比赛人数必须是5、7、8或11");
+//        }
+//        if (event.getRosterSize() != null && event.getMatchPlayerCount() != null
+//            && event.getRosterSize() < event.getMatchPlayerCount()) {
+//            throw new BadRequestException("大名单人数不能小于比赛人数");
+//        }
         if (!eventService.createEvent(event)) {
             throw new BadRequestException("创建赛事失败");
         }
