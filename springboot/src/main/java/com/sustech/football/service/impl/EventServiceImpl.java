@@ -88,6 +88,13 @@ public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements
     @Override
     @Transactional
     public boolean deleteEvent(Long eventId) {
+        // 预先保存赛事下的比赛ID，后续需要显式删除比赛记录
+        List<Long> matchIds = eventMatchService
+            .list(new QueryWrapper<EventMatch>().eq("event_id", eventId))
+            .stream()
+            .map(EventMatch::getMatchId)
+            .toList();
+
         // 1. 删除赛事创建者记录
         QueryWrapper<EventCreator> creatorQueryWrapper = new QueryWrapper<>();
         creatorQueryWrapper.eq("event_id", eventId);
@@ -101,6 +108,11 @@ public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements
         // 3. 删除赛事本身（级联删除其他相关表）
         if (!removeById(eventId)) {
             throw new RuntimeException("删除赛事失败");
+        }
+
+        // 4. 显式删除赛事下的比赛及其关联数据
+        for (Long matchId : matchIds) {
+            matchService.deleteMatch(matchId, 0L);
         }
         return true;
     }
