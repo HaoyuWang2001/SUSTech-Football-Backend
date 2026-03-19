@@ -263,7 +263,11 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
         List<Match> matchList = this.getMatches(teamId);
         List<TeamPlayer> teamPlayerList = teamPlayerService.listWithPlayer(teamId);
         for (TeamPlayer teamPlayer : teamPlayerList) {
-            teamPlayer.setAppearances(matchList.size());
+            // 出场次数改为基于 match_player 表统计球员参与的比赛场数
+            QueryWrapper<MatchPlayer> matchPlayerQueryWrapper = new QueryWrapper<>();
+            matchPlayerQueryWrapper.eq("team_id", teamId).eq("player_id", teamPlayer.getPlayerId());
+            int appearances = Math.toIntExact(matchPlayerService.count(matchPlayerQueryWrapper));
+            teamPlayer.setAppearances(appearances);
             int goals = 0;
             int assists = 0;
             int yellowCards = 0;

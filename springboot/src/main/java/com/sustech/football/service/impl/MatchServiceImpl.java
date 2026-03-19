@@ -109,7 +109,7 @@ public class MatchServiceImpl extends ServiceImpl<MatchMapper, Match> implements
             QueryWrapper<MatchManager> matchManagerQueryWrapper = new QueryWrapper<>();
             matchManagerQueryWrapper.eq("match_id", matchId).eq("user_id", userId);
             List<MatchManager> managers = matchManagerService.list(matchManagerQueryWrapper);
-            if (managers == null) {
+            if (managers == null || managers.isEmpty()) {
                 throw new BadRequestException("用户不是该比赛的管理员，无法删除比赛");
             }
         }
@@ -117,9 +117,20 @@ public class MatchServiceImpl extends ServiceImpl<MatchMapper, Match> implements
         QueryWrapper<EventMatch> eventMatchQueryWrapper = new QueryWrapper<>();
         eventMatchQueryWrapper.eq("match_id", matchId);
         List<EventMatch> eventMatch = eventMatchService.list(eventMatchQueryWrapper);
-        if (!eventMatch.isEmpty()) {
+        if (userId != 0 && !eventMatch.isEmpty()) {
             throw new BadRequestException("赛事比赛，无法删除");
         }
+        // 系统级删除（userId=0）允许清理赛事与比赛的绑定关系
+        if (userId == 0 && !eventMatch.isEmpty()) {
+            eventMatchService.remove(new QueryWrapper<EventMatch>().eq("match_id", matchId));
+        }
+
+        // 清理比赛相关的业务数据，避免外键阻塞删除
+        matchRefereeRequestService.remove(new QueryWrapper<MatchRefereeRequest>().eq("match_id", matchId));
+        matchRefereeService.remove(new QueryWrapper<MatchReferee>().eq("match_id", matchId));
+        matchTeamRequestService.remove(new QueryWrapper<MatchTeamRequest>().eq("match_id", matchId));
+        matchManagerService.remove(new QueryWrapper<MatchManager>().eq("match_id", matchId));
+        matchPlayerActionService.remove(new QueryWrapper<MatchPlayerAction>().eq("match_id", matchId));
 
         MatchCreator matchCreator = new MatchCreator();
         matchCreator.setMatchId(matchId);
@@ -278,6 +289,10 @@ public class MatchServiceImpl extends ServiceImpl<MatchMapper, Match> implements
         if (!updateById(match)) {
             throw new RuntimeException("修改比赛结果失败");
         }
+        // 仅在比赛结束后更新小组积分与统计
+        if (!Match.STATUS_FINISHED.equals(match.getStatus())) {
+            return true;
+        }
         // 需要先获取eventMatch
         EventMatch eventMatch = eventMatchMapper.selectOne(new QueryWrapper<EventMatch>().eq("match_id", match.getMatchId()));
         if (eventMatch != null && eventMatch.getStage().equals(EventMatch.STAGE_CUP_GROUP)) { // 若该match属于某个event，且是一场小组赛（CUP_GROUP)
@@ -328,6 +343,19 @@ public class MatchServiceImpl extends ServiceImpl<MatchMapper, Match> implements
 
             // 更新小组积分
             eventGroupTeam_home.setScore(eventGroupTeam_home.getNumWins() * 3 + eventGroupTeam_home.getNumDraws());
+            eventGroupTeam_away.setScore(eventGroupTeam_away.getNumWins() * 3 + eventGroupTeam_away.getNumDraws());
+
+            // 持久化更新后的分组积分与统计
+            if (eventGroupTeamMapper.update(eventGroupTeam_home, new QueryWrapper<EventGroupTeam>()
+                    .eq("group_id", eventGroupTeam_home.getGroupId())
+                    .eq("team_id", eventGroupTeam_home.getTeamId())) < 1) {
+                throw new InternalServerErrorException("更新小组赛积分失败（主队）");
+            }
+            if (eventGroupTeamMapper.update(eventGroupTeam_away, new QueryWrapper<EventGroupTeam>()
+                    .eq("group_id", eventGroupTeam_away.getGroupId())
+                    .eq("team_id", eventGroupTeam_away.getTeamId())) < 1) {
+                throw new InternalServerErrorException("更新小组赛积分失败（客队）");
+            }
         }
         return true;
     }

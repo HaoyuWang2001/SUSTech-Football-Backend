@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements EventService {
@@ -88,6 +90,13 @@ public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements
     @Override
     @Transactional
     public boolean deleteEvent(Long eventId) {
+        // 预先保存赛事下的比赛ID，后续需要显式删除比赛记录
+        List<Long> matchIds = eventMatchService
+            .list(new QueryWrapper<EventMatch>().eq("event_id", eventId))
+            .stream()
+            .map(EventMatch::getMatchId)
+            .toList();
+
         // 1. 删除赛事创建者记录
         QueryWrapper<EventCreator> creatorQueryWrapper = new QueryWrapper<>();
         creatorQueryWrapper.eq("event_id", eventId);
@@ -102,6 +111,11 @@ public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements
         if (!removeById(eventId)) {
             throw new RuntimeException("删除赛事失败");
         }
+
+        // 4. 显式删除赛事下的比赛及其关联数据
+        for (Long matchId : matchIds) {
+            matchService.deleteMatch(matchId, 0L);
+        }
         return true;
     }
 
@@ -114,12 +128,22 @@ public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements
         }
         List<EventManager> eventManagers = eventManagerService.list(new QueryWrapper<EventManager>().eq("event_id", eventId));
         event.setManagerIdList(eventManagers.stream().map(EventManager::getUserId).toList());
+
         List<EventTeam> eventTeams = eventTeamService.listWithTeam(eventId);
         for (EventTeam et : eventTeams) {
             List<TeamPlayer> teamPlayerList = teamPlayerService.listWithPlayer(et.getTeam().getTeamId());
             et.getTeam().setPlayerList(teamPlayerList.stream().map(TeamPlayer::getPlayer).toList());
         }
-        event.setTeamList(eventTeams.stream().map(EventTeam::getTeam).map(t -> new Event.Team(t.getTeamId(), t.getName(), t.getLogoUrl(), t.getPlayerList().size())).toList());
+
+        Map<Long, Long> rosterCountMap = eventTeamRosterService
+            .list(new QueryWrapper<EventTeamRoster>().eq("event_id", eventId))
+            .stream()
+            .collect(Collectors.groupingBy(EventTeamRoster::getTeamId, Collectors.counting()));
+
+        event.setTeamList(eventTeams.stream()
+            .map(EventTeam::getTeam)
+            .map(t -> new Event.Team(t.getTeamId(), t.getName(), t.getLogoUrl(), rosterCountMap.getOrDefault(t.getTeamId(), 0L).intValue()))
+            .toList());
         List<EventGroup> eventGroups = eventGroupService.list(new QueryWrapper<EventGroup>().eq("event_id", eventId));
         event.setGroupList(eventGroups.stream().map(g -> {
             Event.Group group = new Event.Group();
@@ -130,7 +154,7 @@ public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements
                 Event.Group.Team team = new Event.Group.Team();
                 for (EventTeam et : eventTeams) {
                     if (et.getTeamId().equals(t.getTeamId())) {
-                        team.setTeam(new Event.Team(et.getTeamId(), et.getTeam().getName(), et.getTeam().getLogoUrl(), et.getTeam().getPlayerList().size()));
+                        team.setTeam(new Event.Team(et.getTeamId(), et.getTeam().getName(), et.getTeam().getLogoUrl(), rosterCountMap.getOrDefault(et.getTeamId(), 0L).intValue()));
                         break;
                     }
                 }

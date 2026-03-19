@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -50,6 +51,8 @@ public class MatchController {
     private MatchCreatorService matchCreatorService;
     @Autowired
     private TeamCreatorService teamCreatorService;
+    @Autowired
+    private EventTeamRosterService eventTeamRosterService;
 
     @PostMapping("/create")
     @Transactional
@@ -469,11 +472,12 @@ public class MatchController {
     @Operation(summary = "获取球队", description = "提供比赛 ID 和主客队标识，获取比赛的球队信息")
     @Parameters({
             @Parameter(name = "matchId", description = "比赛 ID", required = true),
-            @Parameter(name = "isHomeTeam", description = "是否主队", required = true)
+            @Parameter(name = "isHomeTeam", description = "是否主队", required = true),
+            @Parameter(name = "isEventMatch", description = "是否为赛事比赛", required = true)
     })
-    public VoMatchTeam getTeam(Long matchId, Boolean isHomeTeam) {
-        if (matchId == null || isHomeTeam == null) {
-            throw new BadRequestException("比赛ID和主客队标识不能为空");
+    public VoMatchTeam getTeam(Long matchId, Boolean isHomeTeam, Boolean isEventMatch) {
+        if (matchId == null || isHomeTeam == null || isEventMatch == null) {
+            throw new BadRequestException("比赛ID、主客队标识和是否赛事比赛不能为空");
         }
         Match match = matchService.getById(matchId);
         if (match == null) {
@@ -495,7 +499,36 @@ public class MatchController {
             Player player = playerService.getById(matchPlayer.getPlayerId());
             matchPlayer.setPlayer(player);
         }
-        if (match.getStatus().equals(Match.STATUS_PENDING)) { // 当比赛未开始的时候，可以更新比赛对应的球员列表及是否首发
+        if (Boolean.TRUE.equals(isEventMatch)) {
+            MatchEvent matchEvent = matchService.findMatchEvent(match);
+            if (matchEvent == null || matchEvent.getEventId() == null) {
+                throw new BadRequestException("比赛不属于任何赛事，无法获取赛事大名单");
+            }
+
+            List<Player> rosterPlayers = eventTeamRosterService.getRoster(matchEvent.getEventId(), teamId);
+            Map<Long, MatchPlayer> matchPlayerMap = matchPlayerList.stream().collect(Collectors.toMap(MatchPlayer::getPlayerId, mp -> mp, (a, b) -> a));
+            Map<Long, Integer> teamNumberMap = teamService.getTeamPlayers(teamId)
+                    .stream()
+                    .collect(Collectors.toMap(TeamPlayer::getPlayerId, TeamPlayer::getNumber, (a, b) -> a));
+
+            List<MatchPlayer> rosterMatchPlayers = new ArrayList<>();
+            for (Player rosterPlayer : rosterPlayers) {
+                MatchPlayer matchPlayer = matchPlayerMap.get(rosterPlayer.getPlayerId());
+                if (matchPlayer == null) {
+                    matchPlayer = new MatchPlayer();
+                    matchPlayer.setMatchId(matchId);
+                    matchPlayer.setTeamId(teamId);
+                    matchPlayer.setPlayerId(rosterPlayer.getPlayerId());
+                    matchPlayer.setIsStart(false);
+                }
+                matchPlayer.setPlayer(rosterPlayer);
+                if (matchPlayer.getNumber() == null) {
+                    matchPlayer.setNumber(teamNumberMap.get(rosterPlayer.getPlayerId()));
+                }
+                rosterMatchPlayers.add(matchPlayer);
+            }
+            matchPlayerList = rosterMatchPlayers;
+        } else if (match.getStatus().equals(Match.STATUS_PENDING)) { // 当比赛未开始的时候，可以更新比赛对应的球员列表及是否首发
             // 获取球队当前的所有球员
             List<TeamPlayer> teamCurrentPlayerList = teamService.getTeamPlayers(teamId);
 
