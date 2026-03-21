@@ -71,6 +71,7 @@ public class EventTeamRosterServiceImpl extends ServiceImpl<EventTeamRosterMappe
         for (EventTeamRoster roster : rosterList) {
             Player player = playerService.getById(roster.getPlayerId());
             if (player != null) {
+                player.setNumber(roster.getNumber());
                 players.add(player);
             }
         }

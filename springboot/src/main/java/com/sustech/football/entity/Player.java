@@ -61,6 +61,10 @@ public class Player {
     @Schema(description = "球员所属球队列表")
     private List<Team> teamList;
 
+    @TableField(exist = false)
+    @Schema(description = "球员号码", example = "10")
+    private Integer number;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
