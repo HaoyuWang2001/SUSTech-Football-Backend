@@ -36,6 +36,8 @@ public class UserFavoriteServiceImpl implements UserFavoriteService {
     private EventMapper eventMapper;
     @Autowired
     private PlayerMapper playerMapper;
+    @Autowired
+    private EventMatchMapper eventMatchMapper;
 
     @Override
     public boolean favoriteTeam(Long userId, Long teamId) {
@@ -144,6 +146,8 @@ public class UserFavoriteServiceImpl implements UserFavoriteService {
         for (Match match : matches) {
             match.setHomeTeam(teamMapper.selectById(match.getHomeTeamId()));
             match.setAwayTeam(teamMapper.selectById(match.getAwayTeamId()));
+            EventMatch eventMatch = eventMatchMapper.selectEventMatchWithMatch(match.getMatchId());
+            match.setMatchEvent(new MatchEvent(eventMatch));
         }
         return matches;
     }
