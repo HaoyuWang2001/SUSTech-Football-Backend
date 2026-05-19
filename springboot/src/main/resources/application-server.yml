@@ -4,7 +4,7 @@ server:
     enabled: true
     key-store: classpath:haoyu-wang141.top.pfx
     key-store-type: PKCS12
-    key-store-password: ee898585aq
+    key-store-password: 03ba5b6a09j379
     key-alias: haoyu-wang141.top
 
 spring:
